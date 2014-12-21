@@ -10,7 +10,8 @@ from optparse import OptionParser  # pylint: disable=deprecated-module
 
 intpath = "./interesting/timelapse"
 movpath = "./interesting/movement"
-srcpath = "./Timelapse/"
+#srcpath = "../Timelapse/"
+srcpath = "./input/"
 dstpath = "./video1/"
 
 # Main method
@@ -22,22 +23,20 @@ def main(options, args):
 
     print("HEllow orld!")
     for (dirpath, dirnames, filenames) in os.walk(srcpath):
-        #    print dirpath
-        #    print dirnames
-        #    print filenames
         for filename in filenames:
-            #print("AAAAAAAAAAAAAAAAA")
             match = re.search('saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)*', filename)
-#real            match = re.search('saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)*', filename)
             if match:
                 (year, month, date, hour, minute, second) = match.groups()
-                image_database.add_image(year+month+date, hour, minute, second)
+                image_time = time.strptime(year+month+date+hour+minute+second, "%y%m%d%H%M%S")
+                image_database.add_image(image_time)
 
-    image_database.print_days()
+#    image_database.print_days()
 
-    image_database.print_images()
+#    image_database.print_images()
 
-    image_database.get_first_image("141017").print_image()
+#    img = image_database.get_first_image("141017")
+#    if img:
+#        img.print_image()
 
                 
 
@@ -69,11 +68,12 @@ class ImageDb(object):
 
         self.days = {}
 
-    def add_image(self, date, hour, minute, second, interesting=False):
-
+    def add_image(self, image_time, interesting=False):
+        date = time.strftime("%y%m%d", image_time)
+        
         if not date in self.days.keys():
             self.days[date] = Day(date)
-        self.days[date].add_image(date, hour, minute, second, interesting)
+        self.days[date].add_image(image_time, interesting)
 
         return True
 
@@ -92,9 +92,9 @@ class ImageDb(object):
         return self.days[days[len(days)-1]]
 
     def get_first_image(self, date):
-        if self.days[date]:
+        if date in self.days.keys():
             return self.days[date].get_first_image()
-        
+
         return None
 
     def get_nbrofdays(self):
@@ -131,10 +131,13 @@ class Day(object):
         self.images = {}
         self.date = date
 
-    def add_image(self, date, hour, minute, second, interesting=False):
+    def add_image(self, image_time, interesting=False):
+        clock = time.strftime("%H%M%S", image_time)
 
-        if not hour+minute+second in self.images.keys():
-            self.images[hour+minute+second] = Image(date, hour, minute, second, interesting)
+        if not clock in self.images.keys():
+            self.images[clock] = Image(image_time, interesting)
+        else:
+            self.images[clock].print_image()
 
         return True
 
@@ -153,11 +156,24 @@ class Day(object):
         return self.images[images[len(images)]-1]
 
     def get_x_images(self, nbrofimages):
+        image_list = []
         first = self.get_first_image()
         last  = self.get_last_image()
-        t_first = time.strptime(first.date+first.hour+first.minute+first.second, "%y%m%d%H%M%S")
-        t_last  = time.strptime(last.date+last.hour+last.minute+last.second, "%y%m%d%H%M%S")
-        diff = time.time() # Stopped here
+        
+        diff = (time.mktime(last) - time.mktime(first)) / (nbrofimages+1)
+        for index in range(nbrofimages):
+            timetofind = time.mktime(first) + (index+1)*diff
+            
+            image = self.get_image_by_time(time.localtime(timetofind))
+            image_list.append(image)
+
+        return image_list
+
+    def get_image_by_time(self, image_time):
+        image_keys = self.images.keys()
+        image_keys.sort()
+        for key in image_keys:
+            return None
         
 
     def print_images(self):
@@ -171,17 +187,14 @@ class Day(object):
 
 class Image(object):
 
-    def __init__(self, date, hour, minute, second, interesting=False):
+    def __init__(self, image_time, interesting=False):
 
         self.interesting = interesting
-        self.date = date
-        self.hour = hour
-        self.minute = minute
-        self.second = second
+        self.image_time = image_time
         self.selected = 0
 
     def print_image(self):
-        print("IMAGE: "+self.date+" "+self.hour+self.minute+self.second)
+        print("IMAGE: "+time.strftime("%Y-%m-%d %H:%M:%S", self.image_time))
         return True
 
 
