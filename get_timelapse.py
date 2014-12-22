@@ -25,7 +25,19 @@ def main(options, args):
 
     hello = create_database_from_files(srcpath, 'saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)*')
 
-    hello.print_images()
+
+    day1 = hello.get_day("140801")
+
+#    timelapse_database = day1.get_x_images(14)
+
+    timelapse_database = hello.get_x_images_per_day(15)
+
+    timelapse_database.print_images()
+#    day1.print_images()
+
+
+
+#    hello.print_images()
 
 
 #    for (dirpath, dirnames, filenames) in os.walk(srcpath):
@@ -109,8 +121,20 @@ class ImageDb(object):
     def get_first_image(self, date):
         if date in self.days.keys():
             return self.days[date].get_first_image()
-
         return None
+
+    def get_last_image(self, date):
+        if date in self.days.keys():
+            return self.days[date].get_last_image()
+        return None
+
+    def get_x_images_per_day(self, nbrofimages):
+        new_db = ImageDb()
+        for key in self.days.keys():
+            day = self.days[key].get_x_images(nbrofimages)
+            new_db.days[key] = day
+        return new_db
+            
 
     def get_nbrofdays(self):
         # Return the number of days of data.
@@ -130,7 +154,7 @@ class ImageDb(object):
         sorted_keys = self.days.keys()
         sorted_keys.sort()
         for key in sorted_keys:
-            print(key)
+#            print(key)
             self.days[key].print_images()
         return True
 
@@ -168,21 +192,30 @@ class Day(object):
     def get_last_image(self):
         images = self.images.keys()
         images.sort()
-        return self.images[images[len(images)]-1]
+        return self.images[images[len(images)-1]]
 
     def get_x_images(self, nbrofimages):
-        image_list = []
+        if len(self.images.keys()) <= nbrofimages:
+            return self
+    
+        new_day = Day(self.date)
         first = self.get_first_image()
         last  = self.get_last_image()
         
-        diff = (time.mktime(last) - time.mktime(first)) / (nbrofimages+1)
-        for index in range(nbrofimages):
-            timetofind = time.mktime(first) + (index+1)*diff
-            
-            image = self.get_image_by_time(time.localtime(timetofind))
-            image_list.append(image)
+        diff = (time.mktime(last.image_time) - time.mktime(first.image_time)) / (nbrofimages+1)
+        timetofind = time.mktime(first.image_time) + diff
+        image_keys = self.images.keys()
+        image_keys.sort()
 
-        return image_list
+        for key in image_keys:
+            if time.mktime(self.images[key].image_time) > timetofind:
+                index = image_keys.index(key)-1
+                new_day.add_image(self.images[image_keys[index]].image_time)
+                timetofind += diff
+                if time.mktime(self.images[key].image_time) > timetofind:
+                    new_day.add_image(self.images[key].image_time)
+
+        return new_day
 
     def get_image_by_time(self, image_time):
         image_keys = self.images.keys()
@@ -194,6 +227,7 @@ class Day(object):
     def print_images(self):
         sorted_keys = self.images.keys()
         sorted_keys.sort()
+        print(self.date)
         for key in sorted_keys:
             print("    "+key)
 
