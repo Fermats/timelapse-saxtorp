@@ -22,13 +22,19 @@ def main(options, args):
     image_database = ImageDb()
 
     print("HEllow orld!")
-    for (dirpath, dirnames, filenames) in os.walk(srcpath):
-        for filename in filenames:
-            match = re.search('saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)*', filename)
-            if match:
-                (year, month, date, hour, minute, second) = match.groups()
-                image_time = time.strptime(year+month+date+hour+minute+second, "%y%m%d%H%M%S")
-                image_database.add_image(image_time)
+
+    hello = create_database_from_files(srcpath, 'saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)*')
+
+    hello.print_images()
+
+
+#    for (dirpath, dirnames, filenames) in os.walk(srcpath):
+#        for filename in filenames:
+#            match = re.search('saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)*', filename)
+#            if match:
+#                (year, month, date, hour, minute, second) = match.groups()
+#                image_time = time.strptime(year+month+date+hour+minute+second, "%y%m%d%H%M%S")
+#                image_database.add_image(image_time)
 
 #    image_database.print_days()
 
@@ -39,8 +45,6 @@ def main(options, args):
 #        img.print_image()
 
                 
-
-
 
 #                fromfile = dirpath+"/"+filename
 #                topath = dstpath+"20"+year+"-"+month+"-"+date+"/"
@@ -55,6 +59,17 @@ def main(options, args):
 #                    shutil.copy2(fromfile, topath)
 
     return True
+
+def create_database_from_files(srcpath, file_pattern):
+    image_database = ImageDb()
+    for (dirpath, dirnames, filenames) in os.walk(srcpath):
+        for filename in filenames:
+            match = re.search(file_pattern, filename)
+            if match:
+                (year, month, date, hour, minute, second) = match.groups()
+                image_time = time.strptime(year+month+date+hour+minute+second, "%y%m%d%H%M%S")
+                image_database.add_image(image_time)
+    return image_database
 
 
 class ImageDb(object):
