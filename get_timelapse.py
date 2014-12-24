@@ -10,8 +10,8 @@ from optparse import OptionParser  # pylint: disable=deprecated-module
 
 intpath = "./interesting/timelapse"
 movpath = "./interesting/movement"
-#srcpath = "../Timelapse/"
-srcpath = "./input/"
+srcpath = "../Timelapse/"
+#srcpath = "./input/"
 dstpath = "./video1/"
 
 # Main method
@@ -23,16 +23,16 @@ def main(options, args):
 
     print("HEllow orld!")
 
-    hello = create_database_from_files(srcpath, 'saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)*')
+    hello = create_database_from_files(srcpath, 'saxtorp(\d+)-(\d+)-(\d+)_(\d+)-(\d+)-(\d+)-.*')
 
 
-    day1 = hello.get_day("140801")
+#    day1 = hello.get_day("140607")
 
-#    timelapse_database = day1.get_x_images(14)
+#    timelapse_database = day1.get_x_images(100)
 
-    timelapse_database = hello.get_x_images_per_day(15)
+    timelapse_database = hello.get_x_images_per_day(100)
 
-    timelapse_database.print_images()
+#    timelapse_database.print_images()
 #    day1.print_images()
 
 
@@ -176,6 +176,7 @@ class Day(object):
         if not clock in self.images.keys():
             self.images[clock] = Image(image_time, interesting)
         else:
+            print("Duplicate:")
             self.images[clock].print_image()
 
         return True
@@ -196,6 +197,7 @@ class Day(object):
 
     def get_x_images(self, nbrofimages):
         if len(self.images.keys()) <= nbrofimages:
+#            print("Length to  : "+str(len(self.images.keys()))+"    date: "+self.date)
             return self
     
         new_day = Day(self.date)
@@ -206,15 +208,22 @@ class Day(object):
         timetofind = time.mktime(first.image_time) + diff
         image_keys = self.images.keys()
         image_keys.sort()
-
+        prev_key = image_keys[0]
         for key in image_keys:
-            if time.mktime(self.images[key].image_time) > timetofind:
-                index = image_keys.index(key)-1
-                new_day.add_image(self.images[image_keys[index]].image_time)
-                timetofind += diff
-                if time.mktime(self.images[key].image_time) > timetofind:
+            prev_time = time.mktime(self.images[prev_key].image_time)
+            curr_time = time.mktime(self.images[key].image_time)
+            if curr_time > timetofind:
+                if abs(curr_time-timetofind) < abs(prev_time-timetofind):
                     new_day.add_image(self.images[key].image_time)
-
+                else:
+                    new_day.add_image(self.images[prev_key].image_time)
+                    
+                timetofind += diff
+                if len(new_day.images.keys()) >= nbrofimages:
+                    break
+        
+#        print("Length from: "+str(len(self.images.keys())))
+#        print("Length to  : "+str(len(new_day.images.keys())))
         return new_day
 
     def get_image_by_time(self, image_time):
